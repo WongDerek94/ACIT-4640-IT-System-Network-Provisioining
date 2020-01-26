@@ -1,8 +1,8 @@
-#!/bin/bash -x
+#!/bin/bash
 
 # Constants
-USER_APP_USER="todoapp"
-USER_APP_PASS="P@ssw0rd"
+APP_USER="todoapp"
+APP_USER_PASS="P@ssw0rd"
 USER_APP_HOME_DIR="/home/todoapp"
 APPLICATION_GITHUB_LINK="https://github.com/timoguic/ACIT4640-todo-app.git"
 
@@ -23,41 +23,52 @@ fi
 # ... retrieves the application code
 # ... set up web server to serve static files
 
-echo "Starting Installation Script"
 
 # Install required packages
-sudo yum install git -y
+install_packages () {
+    sudo yum install git -y
 
-sudo curl -sL https://rpm.nodesource.com/setup_13.x | sudo bash -
-sudo yum install nodejs -y
+    sudo curl -sL https://rpm.nodesource.com/setup_13.x | sudo bash -
+    sudo yum install nodejs -y
 
-sudo cp ./mongodb-org-4.2.repo /etc/yum.repos.d/mongodb-org-4.2.repo
-sudo yum install -y mongodb-org -y
-sudo systemctl enable mongod && sudo systemctl start mongod
+    sudo cp ./mongodb-org-4.2.repo /etc/yum.repos.d/mongodb-org-4.2.repo
+    sudo yum install -y mongodb-org -y
+    sudo systemctl enable mongod && sudo systemctl start mongod
 
-sudo yum install yum-utils -y
-sudo cp ./nginx.repo /etc/yum.repos.d/nginx.repo
-sudo yum install nginx -y
+    sudo yum install yum-utils -y
+    sudo cp ./nginx.repo /etc/yum.repos.d/nginx.repo
+    sudo yum install nginx -y
+}
 
 # Creates user 'todoapp'
-sudo useradd -m -r "${USER_APP_USER}"
-sudo usermod --password $(openssl passwd -1 "${USER_APP_PASS}") "${USER_APP_USER}"
+create_user () {
+    sudo useradd -m -r "${APP_USER}"
+    sudo usermod --password $(openssl passwd -1 "${APP_USER_PASS}") "${APP_USER}"
+}
 
-# Retrieve application code
-sudo git clone ${APPLICATION_GITHUB_LINK} "${USER_APP_HOME_DIR}/app"
-
-# Additional configurations needed to start application as a service (i.e, install NodeJS dependencies)
-sudo cp ~/setup/database.js "${USER_APP_HOME_DIR}/app/config/database.js"
-sudo chown todoapp -R "${USER_APP_HOME_DIR}/app"
-sudo chmod -R 755 "${USER_APP_HOME_DIR}"
-# cd "${USER_APP_HOME_DIR}/app" && npm install -y
-sudo su - todoapp -c "cd "${USER_APP_HOME_DIR}/app" && npm install -y"
-sudo cp ~/setup/todoapp.service /etc/systemd/system/todoapp.service
-sudo systemctl daemon-reload && sudo systemctl enable todoapp && sudo systemctl start todoapp
+# Retrieve application code and configure to start application as a service (i.e, install NodeJS dependencies)
+install_application () {
+    sudo git clone ${APPLICATION_GITHUB_LINK} "${USER_APP_HOME_DIR}/app"
+    sudo cp ~/setup/database.js "${USER_APP_HOME_DIR}/app/config/database.js"
+    sudo chown "${APP_USER}" -R "${USER_APP_HOME_DIR}/app"
+    sudo chmod -R 755 "${USER_APP_HOME_DIR}"
+    sudo su - "${APP_USER}" -c "cd "${USER_APP_HOME_DIR}/app" && npm install -y"
+    sudo cp ~/setup/todoapp.service /etc/systemd/system/todoapp.service
+    sudo systemctl daemon-reload && sudo systemctl enable "${APP_USER}" && sudo systemctl start "${APP_USER}"
+}
 
 # Set up web server to serve static files
-sudo cp ~/setup/nginx.conf /etc/nginx/nginx.conf
-sudo systemctl enable nginx && sudo systemctl start nginx
+setup_web_server () {
+    sudo cp ~/setup/nginx.conf /etc/nginx/nginx.conf
+    sudo systemctl enable nginx && sudo systemctl start nginx
+}
+
+echo "Starting Installation Script"
+
+install_packages
+create_user
+install_application
+setup_web_server
 
 # Check if services are running
 sudo systemctl status mongod
@@ -66,8 +77,8 @@ check_service_status mongod
 sudo systemctl status nginx
 check_service_status nginx
 
-sudo systemctl status todoapp
-check_service_status todoapp
+sudo systemctl status "${APP_USER}"
+check_service_status "${APP_USER}"
 
 if [ ${NUM_SERVICES_RUNNING} -eq 3 ]; then
   echo "\nApplication is now set-up and running!"
