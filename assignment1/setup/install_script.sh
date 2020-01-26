@@ -12,7 +12,7 @@ SERVICE_TEMPLATATE="${SETUP_DIR}/todoapp.service"
 
 # Check status of service running, pass in name of service
 NUM_SERVICES_RUNNING=0
-function check_service_status () { 
+function check_service_status () {
   if [ $? -eq 0 ]; then
     echo "$1 running"
     NUM_SERVICES_RUNNING=$(( $NUM_SERVICES_RUNNING + 1))
@@ -30,7 +30,7 @@ fi
 
 # Install required packages
 install_packages () {
-    yum update
+    yum update -y
     curl -sL https://rpm.nodesource.com/setup_13.x | bash -
 
     cp ./mongodb-org-4.2.repo /etc/yum.repos.d/mongodb-org-4.2.repo
