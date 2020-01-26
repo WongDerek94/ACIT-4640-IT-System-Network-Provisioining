@@ -11,10 +11,10 @@ APP_USER="todoapp"
 echo "Starting VM Setup Script"
 
 # Copy over setup files and run installation script on vm
-scp -r ./setup "${LOGIN_USER}@${APP_USER}:~/setup"
+scp -r ./setup "${LOGIN_USER}@${APP_USER}:~/"
 
 #  SSH using admin with SSH key
-ssh -t "${APP_USER}" 'cd ~/setup && ./install_script.sh && exit; exec $SHELL'
+ssh -t "${APP_USER}" 'cd ~/setup && sudo ./install_script.sh && exit; exec $SHELL'
 
 echo "Setup Script completed"
 exit 0
