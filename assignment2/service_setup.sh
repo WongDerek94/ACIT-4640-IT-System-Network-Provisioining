@@ -94,7 +94,6 @@ pxe_install
 
 # Install application on TODO virtual machine, restart when install is complete
 ./setup/vm_setup.sh
-vbmg controlvm "${APP_SERVER_NAME}" reset
 
 echo "Service Setup completed!"
 
