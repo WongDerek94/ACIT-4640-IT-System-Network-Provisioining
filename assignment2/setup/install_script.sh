@@ -41,7 +41,6 @@ install_packages () {
 
 # Creates user 'todoapp'
 create_user () {
-    userdel -r "${APP_USER}" 2>/dev/null
     useradd -m -r "${APP_USER}"
     usermod --password $(openssl passwd -1 "${APP_USER_PASS}") "${APP_USER}"
 }
