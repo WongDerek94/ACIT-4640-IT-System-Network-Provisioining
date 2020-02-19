@@ -56,9 +56,9 @@ function setup_pxe_environment () {
     # Transfer SSH public key 
     scp ~/.ssh/"${TODO_VM_PK_NAME}" "${PXE_SSH_HOST_CONFIG_NAME}":/var/www/lighttpd/files/
     if [ $? -eq 0 ]; then
-        echo "Private key transferred"
+        echo "Public key transferred"
     else  
-        echo "Private key failed to transfer"
+        echo "Public key failed to transfer"
         vbmg controlvm ${PXE_SERVER_NAME} acpipowerbutton
     fi
 
