@@ -1,0 +1,38 @@
+$configureAdminDirPermissions = <<-SCRIPT
+chown -R admin:admin /home/admin/
+chmod -R 755 /home/admin/
+cd /home/admin/setup && sudo ./install_script.sh
+SCRIPT
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "base_4640"
+
+  config.ssh.username = "admin"
+  config.ssh.private_key_path = "./files/admin_id_rsa"
+
+  config.vm.define "todoapp" do |todoapp|
+    todoapp.vm.hostname = "todoapp.bcit.local"
+    todoapp.vm.network "forwarded_port", guest: 80, host: 12080
+    todoapp.vm.synced_folder ".", "/vagrant", disabled: true
+    todoapp.vm.provision "file", source: "./files/setup", destination: "/home/admin/setup"
+    todoapp.vm.provision "shell", inline: $configureAdminDirPermissions
+
+    # OTHER EXAMPLE USAGES OF SHELL COMMAND
+
+    # todoapp.vm.provision "shell" do |shell|
+    #   shell.path = "todoapp_vagrant.sh"
+    # end
+
+#   todoapp.vm.provision "shell", inline: <<-SHELL
+#     setenforce 0
+#     yum -y install nginx
+#    systemctl start nginx
+#   SHELL
+
+    todoapp.vm.provider "virtualbox" do |vb|
+      vb.name = "TODO_4640"
+      vb.linked_clone = true
+    end
+  end
+
+end
