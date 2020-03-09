@@ -1,0 +1,118 @@
+---
+- hosts: all
+  become: true
+  vars:
+    # User defined variables
+    setup_dir: ../files/setup
+    todo_user: todoapp
+    todo_user_password: P@ssw0rd
+    todo_user_directory: /home/todoapp
+    todo_app_directory: "{{ todo_user_directory }}/app"
+    todo_app_service_template_src: "{{ setup_dir }}/todoapp.service.j2"
+    todo_app_service_template_dest: /etc/systemd/system/todoapp.service
+    nginx_repo_src: "{{ setup_dir }}/nginx.repo"
+    nginx_repo_dest: /etc/yum.repos.d/nginx.repo
+    nginx_src_location: "{{ setup_dir }}/nginx.conf"
+    nginx_dest_location: /etc/nginx/nginx.conf
+    database_repo_src: "{{ setup_dir }}/mongodb-org-4.2.repo"
+    database_repo_dest: /etc/yum.repos.d/mongodb-org-4.2.repo
+    database_js_src_location: "{{ setup_dir }}/database.js"
+    database_name: acit4640
+    database_preload_source_dir: "{{ setup_dir }}/preload-db"
+    database_preload_dest_dir: "{{ todo_user_directory }}/preload-db"
+    application_github_link: https://github.com/timoguic/ACIT4640-todo-app.git
+    packages:
+    - git
+    - nodejs
+    - mongodb-org
+    - nginx
+    - yum-utils
+
+  tasks:
+    - name: Set up version of nginx to install
+      copy:
+        src="{{ nginx_repo_src }}" dest="{{ nginx_repo_dest }}"
+
+    - name: Set up version of mongo to install
+      copy:
+        src="{{ database_repo_src }}" dest="{{ database_repo_dest }}"
+
+    - name: Ensure a list of packages are installed
+      yum:
+        name: "{{ packages }}"
+        state: present
+
+    - name: Create User
+      user:
+        name: "{{ todo_user }}"
+        create_home: true
+        system: true
+        password: "{{ todo_user_password}}"
+
+    - name: Replace nginx.conf
+      copy:
+        src="{{ nginx_src_location }}" dest="{{ nginx_dest_location }}"
+
+    - name: Git clone application
+      git: 
+        repo: "{{ application_github_link }}"
+        dest: "{{ todo_app_directory }}"
+        update: false
+
+    - name: Replace database.js
+      copy:
+        src="{{ database_js_src_location }}" dest="{{ todo_user_directory }}/app/config/database.js"
+
+    - name: "Change ownership of {{ todo_user }}"
+      file:
+        path: "{{ todo_app_directory }}"
+        owner: "{{ todo_user }}"
+        group: "{{ todo_user }}"
+        recurse: true
+
+    - name: "Change file permission of {{ todo_user }} directory"
+      file:
+        path: "{{ todo_user_directory }}"
+        mode: "0755"
+        recurse: true
+
+    - name: Install node dependencies
+      npm:
+        path: "{{ todo_app_directory }}"
+        
+    - name: Copy over template file
+      template: src="{{ todo_app_service_template_src }}" dest={{ todo_app_service_template_dest }}
+
+    - name: Copy over database preload data
+      copy:
+        src="{{ database_preload_source_dir }}" dest="{{ todo_user_directory }}"
+
+    - name: "Ensure mongod is enabled and started"
+      systemd:
+        name: mongod
+        enabled: true
+        state: started
+
+    - name: Preload database
+      shell: |
+        export LANG=C
+        mongorestore -d acit4640 "{{ database_preload_dest_dir }}"
+        
+        exit 0
+
+    - name: "Ensure {{ todo_user }} is enabled and started"
+      systemd:
+        name: "{{ todo_user }}"
+        enabled: true
+        state: started
+
+    - name: "Ensure nginx is enabled and started"
+      systemd:
+        name: nginx
+        enabled: true
+        state: started
+
+    - name: Reload daemons
+      systemd:
+        daemon_reload: yes
+...

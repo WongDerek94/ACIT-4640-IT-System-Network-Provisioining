@@ -1,38 +1,31 @@
-$configureAdminDirPermissions = <<-SCRIPT
-chown -R admin:admin /home/admin/
-chmod -R 755 /home/admin/
-cd /home/admin/setup && sudo ./install_script.sh
-SCRIPT
+BOX_NAME = "base_4640"
+VM_NAME = "TODO_4640"
+SSH_USER = "admin"
+VM_HOSTNAME = "todoapp.bcit.local"
+PRIVATE_KEY_PATH = "./files/admin_id_rsa"
+ANSIBLE_PLAYBOOK_PATH = "./ansible/todoapp.yml"
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "base_4640"
+  config.vm.box = BOX_NAME
 
-  config.ssh.username = "admin"
-  config.ssh.private_key_path = "./files/admin_id_rsa"
+  config.ssh.username = SSH_USER
+  config.ssh.private_key_path = PRIVATE_KEY_PATH
 
   config.vm.define "todoapp" do |todoapp|
-    todoapp.vm.hostname = "todoapp.bcit.local"
+    todoapp.vm.hostname = VM_HOSTNAME
+    todoapp.vm.network "forwarded_port", guest: 22, host: 12022
     todoapp.vm.network "forwarded_port", guest: 80, host: 12080
     todoapp.vm.synced_folder ".", "/vagrant", disabled: true
-    todoapp.vm.provision "file", source: "./files/setup", destination: "/home/admin/setup"
-    todoapp.vm.provision "shell", inline: $configureAdminDirPermissions
-
-    # OTHER EXAMPLE USAGES OF SHELL COMMAND
-
-    # todoapp.vm.provision "shell" do |shell|
-    #   shell.path = "todoapp_vagrant.sh"
-    # end
-
-#   todoapp.vm.provision "shell", inline: <<-SHELL
-#     setenforce 0
-#     yum -y install nginx
-#    systemctl start nginx
-#   SHELL
 
     todoapp.vm.provider "virtualbox" do |vb|
-      vb.name = "TODO_4640"
+      vb.name = VM_NAME
       vb.linked_clone = true
     end
+  end
+
+  config.vm.provision :ansible do |ansible|
+    ansible.playbook = ANSIBLE_PLAYBOOK_PATH
+    ansible.compatibility_mode = "2.0"
   end
 
 end

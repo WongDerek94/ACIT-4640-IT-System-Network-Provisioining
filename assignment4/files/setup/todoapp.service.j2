@@ -6,7 +6,7 @@ After=network.target
 Environment=NODE_PORT=8080
 WorkingDirectory=/home/todoapp/app
 Type=simple
-User=todoapp
+User={{ todo_user }}
 ExecStart=/usr/bin/node /home/todoapp/app/server.js
 Restart=always
 
