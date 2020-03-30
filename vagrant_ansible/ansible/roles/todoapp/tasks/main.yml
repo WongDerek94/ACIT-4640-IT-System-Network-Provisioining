@@ -1,0 +1,5 @@
+---
+- name: "Install and setup todoapp including NodeJS dependencies"
+  import_role:
+    name: "todoapp_service"
+...

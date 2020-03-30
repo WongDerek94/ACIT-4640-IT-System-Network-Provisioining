@@ -1,0 +1,31 @@
+BOX_NAME = "base_4640"
+VM_NAME = "TODO_4640"
+SSH_USER = "admin"
+VM_HOSTNAME = "todoapp.bcit.local"
+PRIVATE_KEY_PATH = "./files/admin_id_rsa"
+ANSIBLE_PLAYBOOK_PATH = "./ansible/todoapp.yml"
+
+Vagrant.configure("2") do |config|
+  config.vm.box = BOX_NAME
+
+  config.ssh.username = SSH_USER
+  config.ssh.private_key_path = PRIVATE_KEY_PATH
+
+  config.vm.define "todoapp" do |todoapp|
+    todoapp.vm.hostname = VM_HOSTNAME
+    todoapp.vm.network "forwarded_port", guest: 22, host: 12022
+    todoapp.vm.network "forwarded_port", guest: 80, host: 12080
+    todoapp.vm.synced_folder ".", "/vagrant", disabled: true
+
+    todoapp.vm.provider "virtualbox" do |vb|
+      vb.name = VM_NAME
+      vb.linked_clone = true
+    end
+  end
+
+  config.vm.provision :ansible do |ansible|
+    ansible.playbook = ANSIBLE_PLAYBOOK_PATH
+    ansible.compatibility_mode = "2.0"
+  end
+
+end

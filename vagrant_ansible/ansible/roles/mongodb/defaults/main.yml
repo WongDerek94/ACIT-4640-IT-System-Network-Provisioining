@@ -1,0 +1,5 @@
+---
+database_repo_src: "mongodb-org-4.2.repo"
+database_repo_dest: "/etc/yum.repos.d/mongodb-org-4.2.repo"
+database_name: "acit4640"
+...

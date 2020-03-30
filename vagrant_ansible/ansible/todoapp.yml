@@ -1,0 +1,7 @@
+---
+- hosts: "todoapp"
+  become: true
+  tasks:
+    - include_role:
+        name: "todoapp"
+...

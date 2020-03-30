@@ -1,0 +1,24 @@
+---
+- name: Set up version of nginx to install
+  copy:
+    src="{{ nginx_repo_src }}" 
+    dest="{{ nginx_repo_dest }}"
+        
+- name: Install nginx
+  package:
+    name: "nginx"
+    state: present
+        
+- name: Set up nginx.conf
+  template:
+    src: "{{ nginx_conf_template }}"
+    dest: "{{ nginx_dest_location }}"
+    mode: 0644
+    owner: root
+        
+- name: "Ensure nginx is enabled and started"
+  systemd:
+    name: nginx
+    enabled: true
+    state: started
+...

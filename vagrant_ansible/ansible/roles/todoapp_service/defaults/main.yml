@@ -1,0 +1,13 @@
+---
+todo_user: todoapp
+todo_app_port: 8080
+todo_user_password: P@ssw0rd
+todo_user_directory: "/home/todoapp"
+todo_app_directory: "/home/todoapp/app"
+application_github_link: https://github.com/timoguic/ACIT4640-todo-app.git
+database_js_src_location: "database.js"
+database_js_dest_location: "/home/todoapp/app/config/database.js"
+database_preload_source_dir: "preload-db"
+todo_app_service_template_src: "todoapp.service.j2"
+todo_app_service_template_dest: /etc/systemd/system/todoapp.service
+...

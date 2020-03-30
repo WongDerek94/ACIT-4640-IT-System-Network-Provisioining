@@ -1,0 +1,8 @@
+---
+- name: preload database
+  shell: |
+    export LANG=C
+    mongorestore -d "{{database_name}}" "{{ database_preload_dest_dir }}"
+        
+    exit 0
+...

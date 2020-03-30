@@ -1,0 +1,8 @@
+---
+todoapp_path: '/home/todoapp/app/public'
+todoapp_port: 8080
+nginx_repo_src: "nginx.repo"
+nginx_repo_dest: /etc/yum.repos.d/nginx.repo
+nginx_conf_template: "nginx.conf.j2"
+nginx_dest_location: /etc/nginx/nginx.conf
+...
