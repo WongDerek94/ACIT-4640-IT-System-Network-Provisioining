@@ -1,0 +1,12 @@
+---
+- name: Display public IP address of instance
+  ec2_instance_facts:
+    region: "{{ aws_region }}"
+    filters:
+      instance-state-name: "running"
+  register: instance_data
+- debug:
+    msg:  "Public IP of instance: {{ instance_data.instances[0].public_ip_address }}"
+- debug:
+    msg:  "Public DNS name of instance: {{ instance_data.instances[0].public_dns_name }}"
+...

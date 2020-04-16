@@ -1,0 +1,74 @@
+- name: Put SELinux in permissive mode, logging actions that would be blocked.
+  selinux:
+    policy: targeted
+    state: permissive
+
+- name: "Install yum-utils and git"
+  package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - git
+    - yum-utils
+
+- name: "Create User {{ todo_user }}"
+  user:
+    name: "{{ todo_user }}"
+    create_home: true
+    system: true
+    password: "{{ todo_user_password}}"
+
+- name: "Git clone application"
+  git: 
+    repo: "{{ application_github_link }}"
+    dest: "{{ todo_app_directory }}"
+    update: false
+
+- name: "Configure {{ todo_user }} database"
+  copy:
+    src="{{ database_js_src_location }}"
+    dest="{{ database_js_dest_location }}"
+    
+- name: Copy over preloaded database
+  copy:
+    src="{{ database_preload_source_dir }}" 
+    dest="{{ todo_user_directory }}"
+
+- name: "install and setup MongoDB server"
+  import_role:
+    name: "mongodb"
+
+- name: "Change ownership of {{ todo_user }} directory"
+  file:
+    path: "{{ todo_app_directory }}"
+    owner: "{{ todo_user }}"
+    group: "{{ todo_user }}"
+    recurse: true
+
+- name: "Change file permission of {{ todo_user }} directory"
+  file:
+    path: "{{ todo_user_directory }}"
+    mode: "0755"
+    recurse: true
+
+- name: "Install node dependencies"
+  npm:
+    path: "{{ todo_app_directory }}"
+    
+- name: "Check if {{ todo_user }} service is already registered"
+  stat:
+    path: "/etc/systemd/system/{{ todo_user }}.service"
+  register: "todoapp_service_stat_result"
+    
+- name: "Register {{ todo_user }} service"
+  template: 
+    src="{{ todo_app_service_template_src }}" 
+    dest="{{ todo_app_service_template_dest }}"
+  when: "todoapp_service_stat_result.stat.exists == False"
+
+- name: "Ensure {{ todo_user }} is enabled and restarted"
+  systemd:
+    name: "{{ todo_user }}"
+    enabled: true
+    state: restarted
+...

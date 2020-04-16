@@ -1,0 +1,10 @@
+---
+- name: Install nodejs and npm
+  package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - epel-release
+    - nodejs
+    - npm
+...

@@ -1,0 +1,46 @@
+---
+- hosts: "localhost"
+  connection: local
+  gather_facts: false
+  tasks:
+    - import_role:
+        name: aws
+      tags:
+        provision
+    - import_role:
+        name: aws
+        tasks_from: info
+      tags:
+        - info
+        - never
+    - import_role:
+        name: aws
+        tasks_from: cleanup
+      tags:
+        - cleanup
+        - never
+- hosts: "aws_ec2"
+  gather_facts: false
+  become: true
+  tasks:
+    - import_role:
+        name: todoapp
+      tags:
+        - deployment
+    - import_role:
+        name: todoapp
+        tasks_from: info
+      tags:
+        - info
+        - never
+# Print out public ip and domain name by default and after deployment
+- hosts: "localhost"
+  connection: local
+  gather_facts: false
+  tasks:
+    - import_role:
+        name: aws
+        tasks_from: info
+      tags:
+        - deployment
+...

@@ -1,0 +1,27 @@
+---
+- name: "Set up version of mongo to install"
+  copy:
+    src="{{ database_repo_src }}" 
+    dest="{{ database_repo_dest }}"
+    
+- name: "Install mongodb"
+  package:
+    name: "mongodb-org"
+    state: installed
+
+- name: "Ensure mongod is enabled and started"
+  systemd:
+    name: mongod
+    daemon_reload: true
+    state: started
+
+- name: preload database
+  shell: "mongorestore -d {{database_name}} {{ database_preload_dest_dir }}"
+
+- name: "Reload mongod daemon and ensure it is restarted"
+  systemd:
+    name: mongod
+    enabled: true
+    daemon_reload: true
+    state: restarted
+...

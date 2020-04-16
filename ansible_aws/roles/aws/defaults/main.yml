@@ -1,0 +1,24 @@
+---
+# Creation of VPC
+vpc_prefix: "ACIT4640"
+address_block: "10.46.0.0/16"
+aws_region: "us-west-2"
+
+# Creation of Subnet
+availability_zone: "us-west-2a"
+subnet_address_block: "10.46.10.0/24"
+
+# Creation of routing table
+default_route: "0.0.0.0/0"
+
+# Creation of security group
+secgroup_ssh_allowed_instructor_cidr: "50.68.40.6/31"
+
+# Creation of ec2 instance
+ami_id: "ami-0bc06212a56393ee1"
+instance_type: "t2.micro"
+storage_device_name: "/dev/sda1"
+storage_snapshot_id: "snap-0d5ff467ebf3fd351"
+volume_type: "gp2"
+volume_size: 8
+...

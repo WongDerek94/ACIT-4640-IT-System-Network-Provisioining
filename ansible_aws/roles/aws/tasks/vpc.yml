@@ -1,0 +1,77 @@
+---
+- name: create the VPC
+  ec2_vpc_net:
+    state: present
+    region: "{{ aws_region }}"
+    cidr_block: "{{ address_block }}"
+    name: "{{ vpc_prefix }}_vpc"
+    multi_ok: no
+  register: vpc_data
+- debug:
+    msg: "{{ vpc_data }}"
+
+- name: create the subnet
+  ec2_vpc_subnet:
+    state: present
+    region: "{{ aws_region }}"
+    cidr: "{{ subnet_address_block }}"
+    az: "{{ availability_zone }}"
+    vpc_id: "{{ vpc_data.vpc.id }}"
+    tags:
+      Name: "{{ vpc_prefix }}_subnet"
+  when: vpc_data is defined
+  register: subnet_data
+- debug:
+    msg: "{{ subnet_data }}"
+
+- name: create the internet gateway
+  ec2_vpc_igw:
+    state: present
+    region: "{{ aws_region }}"
+    vpc_id: "{{ vpc_data.vpc.id }}"
+    tags:
+      Name: "{{ vpc_prefix }}_gw"
+  when: vpc_data is defined
+  register: igw_data
+- debug:
+    msg: "{{ igw_data }}"
+
+- name: create the routing table
+  ec2_vpc_route_table:
+    state: present
+    region: "{{ aws_region }}"
+    vpc_id: "{{ vpc_data.vpc.id }}"
+    subnets:
+      - "{{ subnet_address_block }}"
+    routes:
+      - dest: "{{ default_route }}"
+        gateway_id: "{{ igw_data.gateway_id }}"
+    tags:
+      Name: "{{ vpc_prefix }}_rtbl"
+  when: vpc_data and igw_data and subnet_data is defined
+  register: rtbl_data
+- debug:
+    msg: "{{ rtbl_data }}"
+
+- name: create the security group
+  ec2_group:
+    state: present
+    region: "{{ aws_region }}"
+    vpc_id: "{{ vpc_data.vpc.id }}"
+    name: "{{ vpc_prefix }}_SecGroup"
+    rules:
+      - proto: tcp
+        ports:
+          - 22
+        cidr_ip: "{{ secgroup_ssh_allowed_instructor_cidr }}"
+      - proto: tcp
+        ports:
+          - 80
+        cidr_ip: 0.0.0.0/0
+    description:
+      security group to be attached to the vpc allowing ssh connection from intended hosts home and http traffic from anywhere
+  when: vpc_data is defined
+  register: sec_group_data
+- debug:
+    msg: "{{ sec_group_data }}"
+...

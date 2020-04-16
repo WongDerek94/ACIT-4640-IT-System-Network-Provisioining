@@ -1,0 +1,6 @@
+---
+- name: "Provision the VPC with a subnet, IG, routing table, security group"
+  import_tasks: "vpc.yml"
+- name: "Provision the EC2 instance"
+  import_tasks: "ec2.yml"
+...

@@ -1,0 +1,60 @@
+---
+- name: generate key pair for EC2 instance, returns generated private key
+  ec2_key:
+    state: present
+    name: "{{ vpc_prefix }}_key"
+    region: "{{ aws_region }}"
+    wait: yes
+  register: ec2_key_data
+- debug:
+    msg: "{{ ec2_key_data }}"
+    
+- name: create the EC2 instance
+  ec2:
+    region: "{{ aws_region }}"
+    wait: yes
+    vpc_subnet_id: "{{ subnet_data.subnet.id }}"
+    group_id: "{{ sec_group_data.group_id }}"
+    key_name: "{{ ec2_key_data.key.name }}"
+    instance_type: "{{ instance_type }}"
+    volumes:
+      - device_name: "{{ storage_device_name }}"
+        snapshot: "{{ storage_snapshot_id }}"
+        volume_type: "{{ volume_type }}"
+        volume_size: "{{ volume_size }}"
+        delete_on_termination: true
+    image: "{{ ami_id }}"
+    instance_tags:
+      Name: "{{ vpc_prefix }}_APP"
+    exact_count: 1
+    count_tag:
+      Name: "{{ vpc_prefix }}_APP"
+  when: ec2_key_data and subnet_data and sec_group_data is defined
+  register: ec2_data
+- debug:
+    msg: "{{ ec2_data }}"
+
+- name: create a new elastic IP
+  ec2_eip:
+    region: "{{ aws_region }}"
+    device_id: "{{ ec2_data.tagged_instances[0].id }}"
+    reuse_existing_ip_allowed: true
+    release_on_disassociation: true
+    in_vpc: true
+  when: ec2_data is defined
+  register: ec2_eip_data
+- debug:
+    msg: "{{ ec2_eip_data }}"
+
+- name: Check for connection before running app deployment
+  wait_for:
+    host: "{{ ec2_eip_data.public_ip }}"
+    port: 22
+    connect_timeout: 1
+    delay: 0
+    sleep: 0
+    timeout: 200
+
+- name: refresh Ansible inventory
+  meta: refresh_inventory
+...

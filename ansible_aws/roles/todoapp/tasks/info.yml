@@ -1,0 +1,17 @@
+---
+- name: Display status of both Nginx and Todoapp services
+  service_facts:
+  register: service_state
+
+- debug:
+    msg: 
+      "Mongod service status: {{ service_state.ansible_facts.services['mongod.service'].state }}"
+
+- debug:
+    msg: 
+      "Nginx service status: {{ service_state.ansible_facts.services['nginx.service'].state }}"
+
+- debug:
+    msg: 
+      "Todoapp service status: {{ service_state.ansible_facts.services['todoapp.service'].state }}"
+...

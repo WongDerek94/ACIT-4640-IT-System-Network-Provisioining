@@ -1,0 +1,143 @@
+---
+- name: query instance data
+  ec2_instance_facts:
+    region: "{{ aws_region }}"
+    filters:
+      instance-state-name: "running"
+  register: instance_data
+  tags: [ cleanup ]
+
+- name: remove the elastic IP
+  ec2_eip:
+    state: absent
+    region: "{{ aws_region }}"
+    device_id: "{{ instance_data.instances[0].instance_id }}"
+    ip: "{{ instance_data.instances[0].public_ip_address }}"
+    release_on_disassociation: true
+  when: instance_data is defined
+  register: ec2_eip_data
+  tags: [ cleanup ]
+
+- debug:
+    msg: "{{ ec2_eip_data }}"
+  tags: [ cleanup ]
+
+- pause:
+    seconds: 1
+
+- name: remove the EC2 instance
+  ec2:
+    state: absent
+    wait: true
+    region: "{{ aws_region }}"
+    instance_ids: "{{ instance_data.instances[0].instance_id }}"
+    vpc_subnet_id: "{{ instance_data.instances[0].subnet_id }}"
+    group_id: "{{ instance_data.instances[0].security_groups[0].group_id }}"
+    key_name: "{{ instance_data.instances[0].security_groups[0].group_name }}"
+    instance_type: "{{ instance_type }}"
+    volumes:
+      - device_name: "{{ storage_device_name }}"
+        snapshot: "{{ storage_snapshot_id }}"
+        volume_type: "{{ volume_type }}"
+        volume_size: "{{ volume_size }}"
+        delete_on_termination: true
+    image: "{{ ami_id }}"
+    instance_tags:
+      Name: "{{ vpc_prefix }}_APP"
+  when: instance_data is defined
+  register: ec2_data
+  tags: [ cleanup ]
+
+- debug:
+    msg: "{{ ec2_data }}"
+  tags: [ cleanup ]
+
+- pause:
+    seconds: 1
+
+- name: create the security group
+  ec2_group:
+    state: absent
+    region: "{{ aws_region }}"
+    vpc_id: "{{ instance_data.instances[0].vpc_id }}"
+    name: "{{ vpc_prefix }}_SecGroup"
+  when: instance_data is defined
+  register: sec_group_data
+- debug:
+    msg: "{{ sec_group_data }}"
+
+- pause:
+    seconds: 1
+
+- name: remove the routing table
+  ec2_vpc_route_table:
+    state: absent
+    region: "{{ aws_region }}"
+    vpc_id: "{{ instance_data.instances[0].vpc_id }}"
+    subnets:
+      - "{{ subnet_address_block }}"
+    tags:
+      Name: "{{ vpc_prefix }}_rtbl"
+  when: instance_data is defined
+  register: rtbl_data
+  tags: [ cleanup ]
+
+- debug:
+    msg: "{{ rtbl_data }}"
+  tags: [ cleanup ]
+
+- pause:
+    seconds: 1
+
+- name: remove the internet gateway
+  ec2_vpc_igw:
+    state: absent
+    region: "{{ aws_region }}"
+    vpc_id: "{{ instance_data.instances[0].vpc_id }}"
+    tags:
+      Name: "{{ vpc_prefix }}_gw"
+  when: instance_data is defined
+  register: igw_data
+  tags: [ cleanup ]
+
+- debug:
+    msg: "{{ igw_data }}"
+  tags: [ cleanup ]
+
+- pause:
+    seconds: 1
+
+- name: remove the subnet
+  ec2_vpc_subnet:
+    state: absent
+    region: "{{ aws_region }}"
+    cidr: "{{ subnet_address_block }}"
+    az: "{{ availability_zone }}"
+    vpc_id: "{{ instance_data.instances[0].vpc_id }}"
+    tags:
+      Name: "{{ vpc_prefix }}_subnet"
+  when: instance_data is defined
+  register: subnet_data
+  tags: [ cleanup ]
+
+- debug:
+    msg: "{{ subnet_data }}"
+  tags: [ cleanup ]
+
+- pause:
+    seconds: 5
+
+- name: remove the VPC
+  ec2_vpc_net:
+    state: absent
+    name: "{{ vpc_prefix }}_vpc"
+    region: "{{ aws_region }}"
+    cidr_block: "{{ address_block }}"
+  when: instance_data is defined
+  register: vpc_data
+  tags: [ cleanup ]
+
+- debug:
+    msg: "{{ vpc_data }}"
+  tags: [ cleanup ]
+...
